@@ -40,6 +40,10 @@ Simple guide of how to use this repo.
 
 3. Open your browser and navigate to http://localhost:3000 (or the port specified in the console)
 
+4. git clone https://github.com/miwashi/gomoku-test.git
+ cd gomoku-test
+ npm install
+ npm run dev
 ### Playing Gomoku
 
 * Choose your player, 1 or 2. Then choose your color and click on "Start Game"
