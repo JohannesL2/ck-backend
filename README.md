@@ -42,6 +42,6 @@ If you already have the repo locally:
 
 * The game will automatically detect wins and display the winner
 
-### Acknoledgments
+### Acknowledgments
 Thanks to all contributors
 Inspired by the classic Gomoku game
