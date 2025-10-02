@@ -1,4 +1,4 @@
-# Commit Kings - Backend repository
+## Commit Kings - Backend repository
 
 This is the backend repository for a Gomoku game
 

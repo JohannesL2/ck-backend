@@ -3,41 +3,40 @@ const playerHandler = require('../domain/player.js');
 const { logger } = require('../config');
 
 exports.getGames = (req, res) => {
-    //Only id
     const games = gameHandler.getGames();
-    res.status(200).json(games.map(g => g.id ?? g._id));
-
-    //Full games
-    //res.status(200).json(gameHandler.getGames());
-}
+    const ids = games.map(({ id }) => id);
+    res.status(200).json(ids);
+};
 
 exports.findGameById = (req, res) => {
-    res.status(200).json(gameHandler.findGameById(req.params.id));
-}
+    const g = gameHandler.findGameById(req.params.id);
+    if (!g) return res.status(404).json({ error: 'Not found' });
+    res.status(200).json(g);
+};
 
 exports.createGame = (req, res) => {
-    //res.json(gameHandler.findGameById(req.params.id));
     const game = gameHandler.createGame();
-    res.status(200).json(JSON.stringify(game));
-}
+    res.status(201).json(game);
+};
 
 exports.joinGame = (req, res) => {
-    const game = games.find( game => game.id == req.params.game );
-    if(game.player1 == "missing"){
-        game.player1 = req.params.player;
-    }else if(game.player2 == "missing"){
-        game.player2 = req.params.player;
-    }
-    logger.info(game);
-    res.status(200).json(games);
-}
+    const { game: gameId, player } = req.params;
+    const g = gameHandler.joinGame?.(gameId, player);
+    if (!g) return res.status(404).json({ error: 'Not found' });
+    logger.info(g);
+    res.status(200).json(g);
+};
 
 exports.play = (req, res) => {
-    logger.info(JSON.stringify(req.params))
-    const id = req.params.game;
-    const player = req.params.player;
-    const col = req.params.col;
-    const row = req.params.row;
-    const game = gameHandler.play(id, player, col, row);
-    res.status(200).json(game);
-}
+    const { game, player, col, row } = req.params;
+    const result = gameHandler.play(game, player, Number(col), Number(row));
+    if (result?.error) return res.status(409).json(result);
+    res.status(200).json(result);
+};
+
+exports.play = (req, res) => {
+    const { game, player, col, row } = req.params;
+    const result = gameHandler.play(game, player, Number(col), Number(row));
+    if (result?.error) return res.status(409).json(result);
+    res.status(200).json(result);
+};

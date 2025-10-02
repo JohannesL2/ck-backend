@@ -1,43 +1,39 @@
-const { ENV, environments} = require('./config');
-const express = require('express');
-const cors = require('cors')
-var favicon = require('serve-favicon');
-var path = require('path');
+const { ENV, environments } = require("./config");
+const express = require("express");
+const cors = require("cors");
+const favicon = require("serve-favicon");
+const path = require("node:path");
 const swaggerJsDoc = require("swagger-jsdoc");
 const swaggerUi = require("swagger-ui-express");
 
 const app = express();
-app.use(favicon(path.join(__dirname, '..', 'public', 'favicon.ico')));
+
+app.use(favicon(path.join(__dirname, "..", "public", "favicon.ico")));
+app.use(express.static(path.join(__dirname, "..", "public")));
+
 app.use(cors());
-app.use(express.static('public'));
+app.use(express.json());
 
-const swaggerOptions = {
-    swaggerDefinition: {
-        info: {
-            version: "1.0.0",
-            title: "Gomoku API",
-            description: "API Information of gomoku-backend",
-            contact: {
-                name: "Wacoco"
-            },
-            servers: ["http://localhost:3001"],
-        },
-        basePath: '/api/gomoku',  // This is the basePath
+const swaggerSpec = swaggerJsDoc({
+  definition: {
+    openapi: "3.0.0",
+    info: {
+      version: "1.0.0",
+      title: "Gomoku API",
+      description: "API Information of gomoku-backend",
+      contact: { name: "Wacoco" },
     },
-    apis: ['./src/routes/*.js']
-};
+    servers: [{ url: "http://localhost:3001", description: "Local" }],
+  },
+  apis: ["./src/routes/*.js"], // JSDoc annotations live here
+});
 
+app.use(
+  "/api-docs",
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpec, { explorer: true })
+);
 
-const swaggerDocs = swaggerJsDoc(swaggerOptions);
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
-
-app.use('/api/gomoku', require('./routes/game_routes.js'));
-
-// Catch-all middleware when not in PROD
-if (ENV !== environments.PROD) {
-    app.use('*', (req, res) => {
-        res.redirect('/api-docs');
-    });
-}
+app.use("/api/gomoku", require("./routes/game_routes.js"));
 
 module.exports = app;

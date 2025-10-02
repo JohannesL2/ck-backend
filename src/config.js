@@ -1,50 +1,54 @@
-require('dotenv').config();
-const winston = require('winston');
-const fs = require('fs');
-const path = require('path');
+if (typeof process.loadEnvFile === "function") {
+  process.loadEnvFile(); // defaults to ./.env
+}
 
-// Setup PORT
-const PORT = process.env.PORT || 3001
+const path = require("node:path");
+const winston = require("winston");
 
-// Setup ENV
-const environments = {
-    DEV: Symbol('development'),
-    TEST: Symbol('test'),
-    STAGE: Symbol('stage'),
-    PROD: Symbol('prod'),
-};
+// ---- ENV / PORT ----
+const PORT = Number(process.env.PORT) || 3001;
 
-
-const ENV_TEXT = process.env.ENV || 'development'; // Default to development if not set
-
-let env_temp = environments.DEV;
-
-if (ENV_TEXT === "test") {
-    env_temp = environments.TEST;
-} else if (ENV_TEXT === "stage") {
-    env_temp = environments.STAGE;
-} else if (ENV_TEXT === "prod") {
-    env_temp = environments.PROD;
-} 
-const ENV = env_temp;
-
-// Setup logging
-
-const LOG_FILE = process.env.LOG_FILE;
-
-const logger = winston.createLogger({
-    format: winston.format.combine(
-      winston.format.timestamp(),
-      winston.format.printf(({ timestamp, level, message }) => {
-        return `${timestamp} [${level}]: ${message}`;
-      })
-    ),
-    transports: LOG_FILE ? new winston.transports.File({ filename: LOG_FILE }) : [new winston.transports.Console()]
+const ENV_TEXT = String(
+  process.env.NODE_ENV || process.env.ENV || "development"
+).toLowerCase();
+const environments = Object.freeze({
+  DEV: "development",
+  TEST: "test",
+  STAGE: "stage",
+  PROD: "prod",
 });
+const ENV = ENV_TEXT.startsWith("prod")
+  ? environments.PROD
+  : ENV_TEXT.startsWith("stage")
+  ? environments.STAGE
+  : ENV_TEXT.startsWith("test")
+  ? environments.TEST
+  : environments.DEV;
+const isProd = ENV === environments.PROD;
 
-module.exports = {
-    PORT,
-    ENV,
-    environments,
-    logger
-};
+// ---- Logger ----
+const LOG_LEVEL = process.env.LOG_LEVEL || (isProd ? "info" : "debug");
+const LOG_FILE = process.env.LOG_FILE && path.resolve(process.env.LOG_FILE);
+
+const format = winston.format.combine(
+  winston.format.timestamp(),
+  isProd
+    ? winston.format.json()
+    : winston.format.printf(
+        ({ timestamp, level, message, ...meta }) =>
+          `${timestamp} [${level}] ${message}${
+            Object.keys(meta).length ? ` ${JSON.stringify(meta)}` : ""
+          }`
+      )
+);
+
+const transports = [
+  new winston.transports.Console({ level: LOG_LEVEL }),
+  ...(LOG_FILE
+    ? [new winston.transports.File({ filename: LOG_FILE, level: LOG_LEVEL })]
+    : []),
+];
+
+const logger = winston.createLogger({ level: LOG_LEVEL, format, transports });
+
+module.exports = { PORT, ENV, environments, isProd, logger };
